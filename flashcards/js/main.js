@@ -39,7 +39,7 @@ function $$(el, sel) {
     }
 
     function escapeRegExp(string) {
-        return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); // $& means the whole matched string
+        return string.replace(/[.*+?^${}()|[\]\/\\]/g, "\\$&"); // $& means the whole matched string
     }
 
     // TODO state
@@ -56,6 +56,7 @@ function $$(el, sel) {
             //console.log($el);
             //console.log($($el, ".js-symbol"));
             var symbol = $($el, ".js-symbol").innerText.trim();
+            var symbols;
             switch (symbol) {
                 case "<":
                     symbol = "&lt;";
@@ -63,23 +64,36 @@ function $$(el, sel) {
                 case ">":
                     symbol = "&gt;";
                     break;
+                case "/":
+                    symbol = "/";
+                    break;
+                case "/* */":
+                    symbols = ["/*", "*/"];
+                    break;
                 default:
                 // leave be
             }
-            console.log("sym", symbol);
-            var re = new RegExp(
-                '(<strong class="hint">)?' +
-                    escapeRegExp(symbol) +
-                    "(</strong>)?",
-                "g"
-            );
+            if (!symbols) {
+                symbols = [symbol];
+            }
+
             var text = $($el, ".js-examples").innerHTML;
-            console.log(re);
-            console.log(text);
-            $($el, ".js-examples").innerHTML = text.replace(
-                re,
-                '<strong class="hint">' + symbol + "</strong>"
-            );
+            symbols.forEach(function (symbol) {
+                console.log("sym", symbol);
+                var re = new RegExp(
+                    '(<strong class="hint">)?' +
+                        escapeRegExp(symbol) +
+                        "(<\\/strong>)?",
+                    "g"
+                );
+                //console.log(re);
+                //console.log(text);
+                console.log("sym:", symbol, re);
+                $($el, ".js-examples").innerHTML = text
+                    .replace(/<\//g, "<SLASH")
+                    .replace(re, '<strong class="hint">' + symbol + "</strong>")
+                    .replace(/<SLASH/g, "</");
+            });
         });
     };
     Cards.next = function next() {
@@ -97,6 +111,19 @@ function $$(el, sel) {
             window.alert(
                 "Congrats, you've finished. Now try a different mode."
             );
+            switch (window.location.hash) {
+                case "#learn":
+                    $('.js-mode .nav-link[href="#recog"]').click();
+                    break;
+                case "#recall":
+                    $('.js-mode .nav-link[href="#recog"]').click();
+                    break;
+                case "#recog":
+                    $('.js-mode .nav-link[href="#recall"]').click();
+                    break;
+                default:
+                    window.location.hash = "#learn";
+            }
             Cards.init();
             prev.hidden = false;
             return;
@@ -148,22 +175,28 @@ function $$(el, sel) {
                 case "#learn":
                     $$(".js-card").forEach(function ($el) {
                         $($el, ".js-subject").hidden = false;
+                        $($el, ".js-subject-mode").hidden = true;
                         $($el, ".js-symbol").closest("h2").hidden = false;
                         $($el, ".js-examples").hidden = false;
+                        $($el, ".js-cheat").hidden = true;
                     });
                     break;
                 case "#recall":
                     $$(".js-card").forEach(function ($el) {
                         $($el, ".js-subject").hidden = false;
+                        $($el, ".js-subject-mode").hidden = false;
                         $($el, ".js-symbol").closest("h2").hidden = true;
                         $($el, ".js-examples").hidden = true;
+                        $($el, ".js-cheat").hidden = false;
                     });
                     break;
                 case "#recog":
                     $$(".js-card").forEach(function ($el) {
                         $($el, ".js-subject").hidden = true;
+                        $($el, ".js-subject-mode").hidden = true;
                         $($el, ".js-symbol").closest("h2").hidden = false;
                         $($el, ".js-examples").hidden = false;
+                        $($el, ".js-cheat").hidden = false;
                     });
 
                     break;
@@ -187,6 +220,20 @@ function $$(el, sel) {
         $$(".js-cheat").forEach(function ($el) {
             $el.addEventListener("click", onCheat);
         });
+
+        switch (window.location.hash) {
+            case "#learn":
+                $('.js-mode .nav-link[href="#learn"]').click();
+                break;
+            case "#recall":
+                $('.js-mode .nav-link[href="#recall"]').click();
+                break;
+            case "#recog":
+                $('.js-mode .nav-link[href="#recog"]').click();
+                break;
+            default:
+                window.location.hash = "#learn";
+        }
     }
 
     main();
